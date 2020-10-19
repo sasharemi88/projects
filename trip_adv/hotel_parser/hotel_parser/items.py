@@ -8,7 +8,7 @@
 import scrapy
 
 
-class TourObject(scrapy.Item):
+class Hotel(scrapy.Item):
     # define the fields for your item here like:
     region = scrapy.Field()
     city = scrapy.Field()
