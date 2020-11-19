@@ -6,7 +6,8 @@
 import scrapy
 
 
-class TourObject(scrapy.Item):   
+class TourObject(scrapy.Item): 
+    с0_id = scrapy.Field()
     с1_region = scrapy.Field()
     с2_city = scrapy.Field()
     с3_category = scrapy.Field()

@@ -9,7 +9,9 @@ import time
 class AllObjectSpider(scrapy.Spider):
     name = 'AllObjectSpider'
     allowed_domains = ["www.tripadvisor.ru"]
-    start_urls = ["https://www.tripadvisor.ru/Tourism-g2323955-Moscow_Oblast_Central_Russia-Vacations.html"]
+    start_urls = ["https://www.tripadvisor.ru/Tourism-g2323955-Moscow_Oblast_Central_Russia-Vacations.html",
+                  "https://www.tripadvisor.ru/Tourism-g298484-Moscow_Central_Russia-Vacations.html"
+                  ]
     
     parse_date = datetime.date(datetime.today())
     visited_urls = [] 
@@ -32,7 +34,7 @@ class AllObjectSpider(scrapy.Spider):
 
 #Парсим отели    
     def hotels_parse(self, response):
-         time.sleep(0.5)
+         time.sleep(0.1)
          if response.url not in self.visited_urls:
              self.visited_urls.append(response.url)
              for obj_link in response.xpath('//div[@class="listing_title"]/a[@class="property_title prominent "]/@href').extract():
@@ -45,6 +47,9 @@ class AllObjectSpider(scrapy.Spider):
 
     def hotels_parse_obj(self, response):
         obj = TourObject()
+        id_obj_mask = re.compile("-d\d+")
+        id_obj = id_obj_mask.search(response.url)[0].replace('-d','')
+        obj["с0_id"] = id_obj 
         obj["с1_region"] = response.xpath('//li[@class="breadcrumb"][4]/a/span/text()').get()
         obj["с2_city"] = response.xpath('//li[@class="breadcrumb"][5]/a/span/text()').get()
         obj["с3_category"] = 'Отели'
@@ -65,7 +70,7 @@ class AllObjectSpider(scrapy.Spider):
         
 #Парсим достопримечательности        
     def dost_parse(self, response):
-            time.sleep(0.5)            
+            time.sleep(0.1)            
             if response.url not in self.visited_urls:
                 self.visited_urls.append(response.url)
                 for obj_link in response.xpath('//a[@class="_255i5rcQ"]/@href').extract():
@@ -78,6 +83,9 @@ class AllObjectSpider(scrapy.Spider):
             
     def dost_parse_obj(self, response): 
             obj = TourObject()
+            id_obj_mask = re.compile("-d\d+")
+            id_obj = id_obj_mask.search(response.url)[0].replace('-d','')
+            obj["с0_id"] = id_obj
             breadcrumbs = response.xpath('//li[@class="breadcrumb"]/a/span/text()').extract()
             if len(breadcrumbs) == 6:
                 city = breadcrumbs[4]
@@ -105,7 +113,7 @@ class AllObjectSpider(scrapy.Spider):
             
 #Парсим рестораны
     def reca_parse(self, response):
-            time.sleep(0.5)
+            time.sleep(0.2)
             if response.url not in self.visited_urls:
                 self.visited_urls.append(response.url)
                 for obj_link in response.xpath('//a[@class="_15_ydu6b"]/@href').extract():
@@ -119,6 +127,9 @@ class AllObjectSpider(scrapy.Spider):
             
     def reca_parse_obj(self, response): 
             obj = TourObject()
+            id_obj_mask = re.compile("-d\d+")
+            id_obj = id_obj_mask.search(response.url)[0].replace('-d','')
+            obj["с0_id"] = id_obj
             obj["с1_region"] = response.xpath('//li[@class="breadcrumb"][4]/a/span/text()').get()
             obj["с2_city"] = response.xpath('//li[@class="breadcrumb"][5]/a/span/text()').get()
             obj["с3_category"] = 'Рестораны'
