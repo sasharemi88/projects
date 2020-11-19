@@ -8,15 +8,10 @@
 import scrapy
 
 
-class Hotel(scrapy.Item):
-    # define the fields for your item here like:
+class dost(scrapy.Item):
     region = scrapy.Field()
     city = scrapy.Field()
     category = scrapy.Field()
     subcategory = scrapy.Field()
     tags = scrapy.Field()
     name = scrapy.Field()
-    adress = scrapy.Field()
-    latitude = scrapy.Field()
-    longitude = scrapy.Field()
-    date = scrapy.Field()

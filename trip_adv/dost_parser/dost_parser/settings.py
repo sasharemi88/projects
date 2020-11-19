@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-# Scrapy settings for hotel_parser project
+# Scrapy settings for dost_parser project
 #
 # For simplicity, this file contains only settings considered important or
 # commonly used. You can find more settings consulting the documentation:
@@ -9,14 +7,14 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = 'hotel_parser'
+BOT_NAME = 'dost_parser'
 
-SPIDER_MODULES = ['hotel_parser.spiders']
-NEWSPIDER_MODULE = 'hotel_parser.spiders'
+SPIDER_MODULES = ['dost_parser.spiders']
+NEWSPIDER_MODULE = 'dost_parser.spiders'
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-#USER_AGENT = 'hotel_parser (+http://www.yourdomain.com)'
+#USER_AGENT = 'dost_parser (+http://www.yourdomain.com)'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
@@ -47,13 +45,13 @@ ROBOTSTXT_OBEY = False
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 #SPIDER_MIDDLEWARES = {
-#    'hotel_parser.middlewares.HotelParserSpiderMiddleware': 543,
+#    'dost_parser.middlewares.DostParserSpiderMiddleware': 543,
 #}
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #DOWNLOADER_MIDDLEWARES = {
-#    'hotel_parser.middlewares.HotelParserDownloaderMiddleware': 543,
+#    'dost_parser.middlewares.DostParserDownloaderMiddleware': 543,
 #}
 
 # Enable or disable extensions
@@ -65,7 +63,7 @@ ROBOTSTXT_OBEY = False
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 #ITEM_PIPELINES = {
-#    'hotel_parser.pipelines.HotelParserPipeline': 300,
+#    'dost_parser.pipelines.DostParserPipeline': 300,
 #}
 
 # Enable and configure the AutoThrottle extension (disabled by default)

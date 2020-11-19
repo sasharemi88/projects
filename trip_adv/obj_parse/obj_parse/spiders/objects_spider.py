@@ -5,7 +5,7 @@ from obj_parse.items import TourObject
 class ObjectsSpider(scrapy.Spider):
     name = 'ObjectsSpider'
     allowed_domains = ["www.tripadvisor.ru"]
-    start_urls = ["https://www.tripadvisor.ru/Restaurants-g2324049-Nizhny_Novgorod_Oblast_Volga_District.html"]
+    start_urls = ["https://www.tripadvisor.ru/Restaurants-g2324055-Samara_Oblast_Volga_District.html"]
 
     visited_urls = []
     subcat = ['Рестораны', 'Быстрые перекусы', 'Фастфуд', 'Десерты', 'Кофе и чай', 'Бар', 'Паб', 'Кафе', 'Булочные', 'Гастропаб']
