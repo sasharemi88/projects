@@ -6,11 +6,12 @@ import requests
 import re
 import time
 
+
 class AllObjectSpider(scrapy.Spider):
     name = 'AllObjectSpider'
     allowed_domains = ["www.tripadvisor.ru"]
-    start_urls = ["https://www.tripadvisor.ru/Tourism-g2323955-Moscow_Oblast_Central_Russia-Vacations.html",
-                  "https://www.tripadvisor.ru/Tourism-g298484-Moscow_Central_Russia-Vacations.html"
+    start_urls = [
+                  "https://www.tripadvisor.ru/Tourism-g2323955-Moscow_Oblast_Central_Russia-Vacations.html"
                   ]
     
     parse_date = datetime.date(datetime.today())
