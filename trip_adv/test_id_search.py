@@ -5,8 +5,19 @@ Created on Thu Nov 19 12:01:37 2020
 @author: sb_user
 """
 
-import requests
+from datetime import date as dt
 import re
+from datetime import timedelta as td
+from dateutil.relativedelta import relativedelta as rd
 
-r = requests.get('https://www.tripadvisor.ru/Attraction_Review-g1439536-d2615844-Reviews-Khimki_Art_Gallery-Khimki_Moscow_Oblast_Central_Russia.html', verify=True)
-print(r.status_code)
+def round_qtr (d):
+    return(dt(d.year, 3*(d.month // 3)-2, 1))
+
+def round_year (d):
+    return(dt(d.year, 1, 1))
+    
+s = 'ЭйчЭм Хостел Москва '
+s1 = re.sub('\"\"', '"', s)
+s2 = re.sub('|^ | +$| $| ?\t', '', s1)
+
+print(s2)
