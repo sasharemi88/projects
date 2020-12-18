@@ -87,6 +87,7 @@ class AllObjectSpider(scrapy.Spider):
             id_obj_mask = re.compile("-d\d+")
             id_obj = id_obj_mask.search(response.url)[0].replace('-d','')
             obj["с0_id"] = id_obj
+            #поиск города заменить на  response.xpath("//h1[contains(@class, 'masthead_h1')]/text()").get() + регулярки
             breadcrumbs = response.xpath('//li[@class="breadcrumb"]/a/span/text()').extract()
             if len(breadcrumbs) == 6:
                 city = breadcrumbs[4]
@@ -95,7 +96,7 @@ class AllObjectSpider(scrapy.Spider):
             obj["с1_region"] = breadcrumbs[3]           
             obj["с2_city"] = city
             obj["с3_category"] = 'Достопримечательности'
-            subcategory = str( response.xpath("//li[@class='expandSubItemDust secondLevelSubNav']/span/a[contains(text(), city)]/text()").get())
+            subcategory = str(response.xpath("//li[@class='expandSubItemDust secondLevelSubNav']/span/a[contains(text(), city)]/text()").get())
             obj["с4_subcategory"] = subcategory.split(': ')[1]
             tags = response.xpath('//a[@class="_1cn4vjE4"]/text()').extract()
             obj["с5_tags"] = list(set(tags))
