@@ -11,7 +11,7 @@ class AllObjectSpider(scrapy.Spider):
     name = 'AllObjectSpider'
     allowed_domains = ["www.tripadvisor.ru"]
     start_urls = [
-                  "https://www.tripadvisor.ru/Tourism-g2323938-Krasnodar_Krai_Southern_District-Vacations.html"
+                  "https://www.tripadvisor.ru/Tourism-g298504-Republic_of_Karelia_Northwestern_District-Vacations.html"
                   ]
     
     parse_date = datetime.date(datetime.today())
