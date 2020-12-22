@@ -11,7 +11,7 @@ class AllObjectSpider(scrapy.Spider):
     name = 'AllObjectSpider'
     allowed_domains = ["www.tripadvisor.ru"]
     start_urls = [
-                  "https://www.tripadvisor.ru/Tourism-g2323955-Moscow_Oblast_Central_Russia-Vacations.html"
+                  "https://www.tripadvisor.ru/Tourism-g2323938-Krasnodar_Krai_Southern_District-Vacations.html"
                   ]
     
     parse_date = datetime.date(datetime.today())
@@ -50,9 +50,13 @@ class AllObjectSpider(scrapy.Spider):
         obj = TourObject()
         id_obj_mask = re.compile("-d\d+")
         id_obj = id_obj_mask.search(response.url)[0].replace('-d','')
+        c = response.xpath("//h1[contains(@class, 'masthead_h1')]/text()").get() #пример -  'Олимпийский Стадион «Фишт» , Адлер: отзывы'
+        c1 = re.search(', .*', c) # удаляем название объекта - ', Адлер: отзывы'
+        c2 = re.sub('^, ', '', c1[0]) # удаляем запятую перед городом - 'Адлер: отзывы'
+        city = re.sub('[,:].*', '', c2) # удаляем запятую/двоеточие после города и все, что после - 'Адлер'
         obj["с0_id"] = id_obj 
         obj["с1_region"] = response.xpath('//li[@class="breadcrumb"][4]/a/span/text()').get()
-        obj["с2_city"] = response.xpath('//li[@class="breadcrumb"][5]/a/span/text()').get()
+        obj["с2_city"] = city
         obj["с3_category"] = 'Отели'
         obj["с4_subcategory"] = ''
         obj["с5_tags"] = ''
@@ -87,12 +91,11 @@ class AllObjectSpider(scrapy.Spider):
             id_obj_mask = re.compile("-d\d+")
             id_obj = id_obj_mask.search(response.url)[0].replace('-d','')
             obj["с0_id"] = id_obj
-            #поиск города заменить на  response.xpath("//h1[contains(@class, 'masthead_h1')]/text()").get() + регулярки
-            breadcrumbs = response.xpath('//li[@class="breadcrumb"]/a/span/text()').extract()
-            if len(breadcrumbs) == 6:
-                city = breadcrumbs[4]
-            else:
-                city = breadcrumbs[3] 
+            #ищем и тег с городм и очищаем от мусора
+            c = response.xpath("//h1[contains(@class, 'masthead_h1')]/text()").get()
+            c1 = re.search(', .*', c)
+            c2 = re.sub('^, ', '', c1[0])
+            city = re.sub('[,:].*', '', c2)
             obj["с1_region"] = breadcrumbs[3]           
             obj["с2_city"] = city
             obj["с3_category"] = 'Достопримечательности'
@@ -131,9 +134,13 @@ class AllObjectSpider(scrapy.Spider):
             obj = TourObject()
             id_obj_mask = re.compile("-d\d+")
             id_obj = id_obj_mask.search(response.url)[0].replace('-d','')
+            c = response.xpath("//h1[contains(@class, 'masthead_h1')]/text()").get()
+            c1 = re.search(', .*', c)
+            c2 = re.sub('^, ', '', c1[0])
+            city = re.sub('[,:].*', '', c2)
             obj["с0_id"] = id_obj
             obj["с1_region"] = response.xpath('//li[@class="breadcrumb"][4]/a/span/text()').get()
-            obj["с2_city"] = response.xpath('//li[@class="breadcrumb"][5]/a/span/text()').get()
+            obj["с2_city"] = city
             obj["с3_category"] = 'Рестораны'
             obj_tags = response.xpath('//a[@class="_2mn01bsa"]/text()').extract()
             tags = [i for i in obj_tags if i in self.subcat]        

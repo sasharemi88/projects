@@ -72,8 +72,7 @@ def rebuild(file):
                     for d in dates:
                         name = re.sub('^\"|\"$/g','', line['с6_name'])
                         adress = re.sub('^\"|\"$/g','', line['с7_adress'])
-                        cat_key = (line['с3_category'], line['с4_subcategory'])
-                        print(cat_key)
+                        cat_key = (line['с3_category'], line['с4_subcategory'])                        
                         mcc_cat = cat_d[cat_key][0]
                         mcc_subcat = cat_d[cat_key][1]                        
                         writer.writerow({'Широта': line['с8_latitude'],
