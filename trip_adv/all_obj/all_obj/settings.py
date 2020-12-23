@@ -87,7 +87,3 @@ ROBOTSTXT_OBEY = False
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 FEED_EXPORT_ENCODING = 'utf-8'
-
-DOWNLOAD_HANDLERS = {
-    'https': 'scrapy.core.downloader.handlers.http.HTTP10DownloadHandler',
-}

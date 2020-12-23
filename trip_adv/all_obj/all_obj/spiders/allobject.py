@@ -11,7 +11,7 @@ class AllObjectSpider(scrapy.Spider):
     name = 'AllObjectSpider'
     allowed_domains = ["www.tripadvisor.ru"]
     start_urls = [
-                  "https://www.tripadvisor.ru/Tourism-g298504-Republic_of_Karelia_Northwestern_District-Vacations.html"
+                  "https://www.tripadvisor.ru/Tourism-g2323944-Ivanovo_Oblast_Central_Russia-Vacations.html"
                   ]
     
     parse_date = datetime.date(datetime.today())
@@ -29,7 +29,8 @@ class AllObjectSpider(scrapy.Spider):
         reca_page_url = urljoin(self.domain, reca_page)
         spiders = {hotels_page_url: self.hotels_parse,
                    dost_page_url: self.dost_parse,
-                   reca_page_url: self.reca_parse}
+                   reca_page_url: self.reca_parse
+                   }
         for s in spiders.items():
             yield response.follow(s[0], callback=s[1])
 
@@ -78,11 +79,12 @@ class AllObjectSpider(scrapy.Spider):
             time.sleep(0.1)            
             if response.url not in self.visited_urls:
                 self.visited_urls.append(response.url)
-                for obj_link in response.xpath('//a[@class="_255i5rcQ"]/@href').extract():
+                for obj_link in response.xpath('//a[@class="_1QKQOve4"]/@href').extract(): #_255i5rcQ
                     url = urljoin("https://www.tripadvisor.ru", obj_link)
                     yield response.follow(url, callback=self.dost_parse_obj)
-            pagination = response.url.split('-Activities-')
-            next_page_url = pagination[0] + '-Activities-oa' + str(self.pgn) + pagination[1]
+            p1 = response.url.split('-Activities')[0]
+            p2 = re.sub('-oa\d+', '', s.split('-Activities')[1])
+            next_page_url = p1 + '-Activities-oa' + str(self.pgn) + p2
             self.pgn = self.pgn + 30
             yield response.follow(next_page_url, callback=self.dost_parse)
             
@@ -91,12 +93,12 @@ class AllObjectSpider(scrapy.Spider):
             id_obj_mask = re.compile("-d\d+")
             id_obj = id_obj_mask.search(response.url)[0].replace('-d','')
             obj["с0_id"] = id_obj
-            #ищем и тег с городм и очищаем от мусора
+            #ищем тег с городм и очищаем от мусора
             c = response.xpath("//h1[contains(@class, 'masthead_h1')]/text()").get()
             c1 = re.search(', .*', c)
             c2 = re.sub('^, ', '', c1[0])
             city = re.sub('[,:].*', '', c2)
-            obj["с1_region"] = breadcrumbs[3]           
+            obj["с1_region"] = response.xpath('//li[@class="breadcrumb"][4]/a/span/text()').get()           
             obj["с2_city"] = city
             obj["с3_category"] = 'Достопримечательности'
             subcategory = str(response.xpath("//li[@class='expandSubItemDust secondLevelSubNav']/span/a[contains(text(), city)]/text()").get())
