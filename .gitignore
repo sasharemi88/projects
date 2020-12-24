@@ -1,0 +1,7 @@
+__pycache__
+.idea
+*.csv
+*.xls
+*.rar
+*.zip
+*.html
