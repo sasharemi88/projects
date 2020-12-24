@@ -1,117 +1,145 @@
 import json
 
 import scrapy
-from all_obj.items import TourObject
-from datetime import datetime
+import datetime
 import re
 
 
 OBJECT_TYPES = {'HOTEL': 'Отели', 'ATTRACTION': 'Достопримечательности',
                 'EATERY': 'Рестораны'}
 
+HEADERS = {'X-TripAdvisor-API-Key': 'ce957ab2-0385-40f2-a32d-ed80296ff67f',
+           'X-TripAdvisor-UUID': '9bd844a6-231f-437b-b752-e5a1acbfee09'}
+
 
 class AllObjectSpider(scrapy.Spider):
     name = 'tripadvisor'
     allowed_domains = ["www.tripadvisor.ru"]
-    start_urls = [
-        'https://www.tripadvisor.ru/Tourism-g298484-Moscow_Central_Russia-Vacations.html'
-        # 'https://www.tripadvisor.ru/Tourism-g798123-Lipetsk_Lipetsk_Oblast_Central_Russia-Vacations.html'
-    ]
 
-    parse_date = datetime.date(datetime.today())
-    domain = "https://www.tripadvisor.ru"
+    def start_requests(self):
+        locations = [
+            # 2324012,  # Томская область
+            # 2324094,  # Ставропольский край
+            2323928,  # Астраханская область
+        ]
+        for location_id in locations:
+            HEADERS.update({'Content-Type': 'application/x-www-form-urlencoded'})
+            yield scrapy.Request(
+                url='https://api.tripadvisor.com/api/internal/1.19/meta_hac/{}'.format(location_id),
+                method='POST',
+                headers=HEADERS,
+                body='currency=RUB&lang=ru&limit=50&lod=extended', callback=self.parse_objects)
 
-    def parse(self, response):
-        # Парсинг отелей
-        hotels_url = response.xpath("//a[@title='Отели']/@href").get()
-        yield response.follow(hotels_url, callback=self.parse_hotels)
+            HEADERS.update({'Content-Type': 'application/json'})
+            yield scrapy.Request(
+                url='https://api.tripadvisor.com/api/internal/1.14/location/{}/restaurants?limit=50&offset=0&lang=ru'.format(location_id),
+                headers=HEADERS,
+                callback=self.parse_objects)
 
-        # Парсинг развлечений (достопримечательности)
-        attraction_url = response.xpath("//a[@title='Развлечения']/@href").get()
-        attraction_url = re.sub(r'Activities(-)', r'\g<0>a_allAttractions.true-', attraction_url)
-        yield response.follow(attraction_url, callback=self.parse_attraction)
+            yield scrapy.Request(
+                url='https://api.tripadvisor.com/api/internal/1.14/location/{}/attractions?limit=50&offset=0&lang=ru'.format(location_id),
+                headers=HEADERS,
+                callback=self.parse_objects)
 
-        # Парсинг ресторанов
-        restaurants_url = response.xpath("//a[@title='Рестораны']/@href").get()
-        yield response.follow(restaurants_url, callback=self.parse_restaurants)
+    def parse_objects(self, response):
+        result = json.loads(response.text)
+        objects = result['data']
 
-    # Парсим отели
-    def parse_hotels(self, response):
-        for obj_link in response.xpath(
-                '//div[@class="listing_title"]/a[@class="property_title prominent "]/@href').extract():
-            yield response.follow(obj_link, callback=self.parse_obj)
+        for obj in objects:
+            category = obj.get('category').get('key')
+            subcategory = obj.get('subcategory')
+            if subcategory:
+                subcategory = re.sub(r'\xa0', ' ', subcategory[0]['name'])
+            subtypes = obj.get('subtype')
 
-        next_page = response.xpath("//a[contains(@class, 'next')]/@href").get()
+            category, subcategory = replace_categories(category, subcategory, subtypes)
+
+            for d_tuple in split_dates():
+                yield {
+                    'Широта': obj.get('latitude'),
+                    'Долгота': obj.get('longitude'),
+                    'Наименование': obj.get('name'),
+                    'Адрес': obj.get('address'),
+                    'Категория': category,
+                    'Подкатегория': subcategory,
+                    'Дата': d_tuple[0],
+                    'Тип даты': d_tuple[1]
+                }
+
+        next_page = result['paging'].get('next')
         if next_page:
-            yield response.follow(next_page, callback=self.parse_hotels)
+            if objects[0]['category']['key'] == 'hotel':
+                body = next_page.split('?')[1]
+                yield response.follow(url=response.url,
+                                      method='POST',
+                                      headers=response.request.headers,
+                                      body=body,
+                                      dont_filter=True,
+                                      callback=self.parse_objects)
+            else:
+                yield response.follow(url=next_page,
+                                      headers=response.request.headers,
+                                      dont_filter=True,
+                                      callback=self.parse_objects)
 
-    # Парсим достопримечательности
-    def parse_attraction(self, response):
-        for obj_link in response.xpath('//h2/../@href').extract():
-            yield response.follow(obj_link, callback=self.parse_obj)
 
-        next_page = response.xpath("//a[text()='Далее']/@href").get()
-        if next_page:
-            yield response.follow(next_page, callback=self.parse_attraction)
+def replace_categories(category, subcategory, subtypes):
+    return category, subcategory
 
-    # Парсим рестораны
-    def parse_restaurants(self, response):
-        for obj_link in response.xpath('//a[@class="_15_ydu6b"]/@href').extract():
-            yield response.follow(obj_link, callback=self.parse_obj)
+    # Пока сбор с оригинальными категоирями, после согласования всех соответствий
+    # категорий/подкатегорий можно раскомментировать и поправить код ниже.
 
-        next_page = response.xpath("//a[contains(@class, 'next')]/@href").get()
-        if next_page:
-            yield response.follow(next_page, callback=self.parse_restaurants)
+    # cat_d = {'Музеи': ('Достопримечательности', 'Музеи'),
+    #          'Еда и напитки': ('Отдых/развлечения/спорт', 'Развлечения'),
+    #          'Достопримечательности и культурные объекты': ('Достопримечательности', 'Культурные объекты'),
+    #          'Природа и парки': ('Достопримечательности', 'Парки'),
+    #          'Покупки': ('Достопримечательности', 'Торговые центры'),
+    #          'Зоопарки и океанариумы': ('Отдых/развлечения/спорт', 'Развлечения'),
+    #          'Транспорт': ('Туризм/транспорт', 'Общественный транспорт/Такси'),
+    #          'Ресурсы для путешественников': ('Туризм/транспорт', 'Турагенства'),
+    #          'Развлечения и игры': ('Отдых/развлечения/спорт', 'Развлечения'),
+    #          'Аквапарки и парки развлечений': ('Отдых/развлечения/спорт', 'Развлечения'),
+    #          'Концерты и представления': ('Отдых/развлечения/спорт', 'Развлечения'),
+    #          'Казино и азартные игры': ('Отдых/развлечения/спорт', 'Азартные игры'),
+    #          'Активный отдых на открытом воздухе': ('Отдых/развлечения/спорт', 'Развлечения')
+    #          }
+    #
+    # if category == 'hotel':
+    #     return 'Туризм/транспорт', 'Отели'
+    # if category == 'restaurant':
+    #     return 'Кафе/бары/рестораны', 'Кафе/бары/рестораны'
+    # if category == 'attraction':
+    #     if subtypes:
+    #         subtypes = [st['name'].lower() for st in subtypes]
+    #         if 'церкви и соборы' in subtypes:
+    #             return 'Достопримечательности', 'Церкви и соборы'
+    #
+    #     try:
+    #         return cat_d.get(subcategory)
+    #     except:
+    #         print('{} - НЕТ В СЛОВАРЕ СОПОСТАВЛЕНИЯ!')
+    #         return category, subcategory
+    #
+    # return category, subcategory
 
-    def parse_obj(self, response):
-        obj = TourObject()
 
-        # Выдергиваем из текста страницы json с последними объектами и берем 1 из них
-        try:
-            entity = json.loads(
-                re.search(r'recentHistoryList.+?(\[.+?)\)', response.text)[1]
-            )[0]
-        except:
-            print()
+def split_dates(delta=3):
+    """ Разделение дат на кварталы и годы.
 
-        # Категория, подкатегория
-        category = OBJECT_TYPES[entity['type']]
-        subcategory = ''
-        if category == 'Достопримечательности':
-            subcategory = response.xpath(
-                "//li[@class='expandSubItemDust secondLevelSubNav']"
-                "/span/a[contains(text(), city)]/text()").get()
-            subcategory = subcategory.split(': ')[1]
+    Parameters
+    ----------
+    delta : int
+        На сколько лет назад сделать расчет.
+    Returns
+    -------
 
-        # Адрес
-        address = response.xpath('//span[contains(@class, "ui_icon map-pin")]'
-                                 '/following-sibling::span//text()').get()
+    """
+    dates_list = []
+    today = datetime.date.today()
 
-        # Координаты
-        coords = entity.get('coords')
-        if coords:
-            lat = entity['coords'].split(',')[0]
-            lon = entity['coords'].split(',')[1]
-        else:
-            lat, lon = '', ''
+    for year in range(delta):
+        dates_list.append((datetime.date(today.year - year, 1, 1), 'y'))
+        for month in [1, 4, 7, 10]:
+            dates_list.append((datetime.date(today.year - year, month, 1), 'q'))
 
-        name = entity['details']['name']
-
-        # Регион, город
-        geo = entity['name'].replace(name + ', ', '')
-        geo = geo.split(',')
-
-        obj["с0_id"] = entity['value']
-        obj["с1_region"] = ','.join(geo[1:]).strip()
-        obj["с2_city"] = geo[0]
-        obj["с3_category"] = category
-        obj["с4_subcategory"] = subcategory
-        obj["с5_tags"] = ''
-        obj["с6_name"] = name
-        # obj["с6_name"] = response.xpath('//h1[@class="_1mTlpMC3"]/text()').get()
-        obj["с7_adress"] = address or ''
-        obj["с8_latitude"] = lat
-        obj["с9_longitude"] = lon
-        obj["с10_date"] = self.parse_date
-
-        yield obj
+    return dates_list
