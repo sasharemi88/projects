@@ -5,22 +5,28 @@ import datetime
 import re
 
 
-OBJECT_TYPES = {'HOTEL': 'Отели', 'ATTRACTION': 'Достопримечательности',
-                'EATERY': 'Рестораны'}
-
 HEADERS = {'X-TripAdvisor-API-Key': 'ce957ab2-0385-40f2-a32d-ed80296ff67f',
            'X-TripAdvisor-UUID': '9bd844a6-231f-437b-b752-e5a1acbfee09'}
 
 
 class AllObjectSpider(scrapy.Spider):
     name = 'tripadvisor'
-    allowed_domains = ["www.tripadvisor.ru"]
 
     def start_requests(self):
         locations = [
             # 2324012,  # Томская область
             # 2324094,  # Ставропольский край
-            2323928,  # Астраханская область
+            # 2323928,  # Астраханская область
+            # 2323978,  # Тюменская область
+            # 2324091,  # Республика Коми
+            # 2324029,  # Вологодская область
+            # 2323947,  # Костромская область
+            # 2324034,  # Магаданская область
+            # 1087652,  # Оренбургская область
+            # 2323968,  # Ярославская область
+            # 2323965,  # Владимирская область
+            # 2323984,  # Иркутская область
+            2324040,  # Приморский край
         ]
         for location_id in locations:
             HEADERS.update({'Content-Type': 'application/x-www-form-urlencoded'})
@@ -51,8 +57,10 @@ class AllObjectSpider(scrapy.Spider):
             if subcategory:
                 subcategory = re.sub(r'\xa0', ' ', subcategory[0]['name'])
             subtypes = obj.get('subtype')
+            if subtypes:
+                subtypes = ','.join(x['name'] for x in subtypes)
 
-            category, subcategory = replace_categories(category, subcategory, subtypes)
+            # category, subcategory = replace_categories(category, subcategory, subtypes)
 
             for d_tuple in split_dates():
                 yield {
@@ -62,6 +70,7 @@ class AllObjectSpider(scrapy.Spider):
                     'Адрес': obj.get('address'),
                     'Категория': category,
                     'Подкатегория': subcategory,
+                    'Подтипы категории': subtypes,
                     'Дата': d_tuple[0],
                     'Тип даты': d_tuple[1]
                 }
@@ -84,7 +93,7 @@ class AllObjectSpider(scrapy.Spider):
 
 
 def replace_categories(category, subcategory, subtypes):
-    return category, subcategory
+    return category, subcategory, subtypes
 
     # Пока сбор с оригинальными категоирями, после согласования всех соответствий
     # категорий/подкатегорий можно раскомментировать и поправить код ниже.
