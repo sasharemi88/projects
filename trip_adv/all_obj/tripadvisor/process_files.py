@@ -19,6 +19,7 @@ def read_files(path):
     """
     df = pd.DataFrame()
     for file in Path(path).glob('*.csv'):
+        print(f'Добавление файла {file} в датафрейм')
         df = df.append(pd.read_csv(file, dtype=str, keep_default_na=False))
 
     return df
@@ -38,6 +39,7 @@ def clear_df(df):
     """
     df = df.copy()
     df = df[df['Широта'] != '']
+    df = df[df['Адрес'] != '']
     df.replace(to_replace=r'\s+', value=' ', regex=True, inplace=True)
     df = df.applymap(lambda x: x.strip())
     df.drop_duplicates(keep='first', inplace=True)
@@ -94,9 +96,12 @@ def set_categories(df):
                ['Категория', 'Подкатегория']] = matchstr[2:]
 
     # Отдельно выделить церкви и соборы
-    df.loc[(df['Категория'] == 'Достопримечательности') &
-           (df['Наименование'].str.contains('собор |храм |церковь|монастырь', case=False)),
+    # TODO: выделение подкатегорий из поля Подтипы категории
+    df.loc[df['Подтипы категории'].str.contains('церкви и соборы', case=False),
            ['Категория', 'Подкатегория']] = ['Достопримечательности', 'Церкви и соборы']
+
+    # Удаление ненужного столбца "Подтипы категории"
+    del df['Подтипы категории']
 
     return df
 
@@ -110,10 +115,13 @@ if __name__ == '__main__':
 
     # Удалить строки с пустой широтой
     # Убрать дубликаты
+    print('Очистка датафрейма')
     df = clear_df(df)
 
     # Сопоставить категории и подкатегории
+    print('Заполнение категорий/подкатегорий')
     df = set_categories(df)
 
     # Сохранить в csv с табуляцией
+    print('Сохранение файла result.csv')
     df.to_csv('result.csv', sep='\t', index=False, quoting=csv.QUOTE_NONE)
