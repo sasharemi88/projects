@@ -23,24 +23,31 @@ class AllObjectSpider(scrapy.Spider):
             # 2323965,  # Владимирская область
             # 2323936,  # Волгоградская область
             # 2324029,  # Вологодская область
+            2323967,  # Воронежская область
             # 2324042,  # Еврейская автономная область
+            2324020,  # Забайкальский край
+            2323944,  # Ивановская область
             # 2323984,  # Иркутская область
             # 2324087,  # Кабардино-Балкарская Республика
+            2324022,  # Калининградская область
             # 2323946,  # Калужская область
             # 2324090,  # Карачаево-Черкесская Республика
             # 2323989,  # Кемеровская область
             # 2324048,  # Кировская область
             # 2323947,  # Костромская область
+            2323938,  # Краснодарский край
             # 2324021,  # Красноярский край
             # 2323974,  # Курганская область
             # 2323948,  # Курская область
             # 2324023,  # Ленинградская область
+            2323950,  # Липецкая область
             # 2324034,  # Магаданская область
             # 2323955,  # Московская область *
             # 298484,   # Москва *
             # 2324024,  # Мурманская область
             # 2324032,  # Ненецкий автономный округ
             # 2324049,  # Нижегородская область
+            # 2324025,  # Новгородская область
             # 2323995,  # Новосибирская область
             # 2324008,  # Омская область
             # 1087652,  # Оренбургская область
@@ -50,11 +57,13 @@ class AllObjectSpider(scrapy.Spider):
             # 2324040,  # Приморский край
             # 2324027,  # Псковская область
             # 2323937,  # Республика Адыгея
+            1833666,  # Республика Алтай
             # 298517,   # Республика Башкортостан
             # 2324015,  # Республика Бурятия
             # 1536793,  # Республика Дагестан
             # 679470,   # Республика Ингушетия
             # 1207891,  # Республика Калмыкия
+            298504,  # Республика Карелия
             # 2324091,  # Республика Коми
             # 313972,   # Крымнаш *
             # 2324066,  # Республика Марий Эл
@@ -71,10 +80,12 @@ class AllObjectSpider(scrapy.Spider):
             # 2324035,  # Сахалинская область
             # 2323977,  # Свердловская область
             # 295387,   # Севастополь
+            2323960,  # Смоленская область
             # 2324094,  # Ставропольский край
             # 2323961,  # Тамбовская область
             # 2323963,  # Тверская область
             # 2324012,  # Томская область
+            2323964,  # Тульская область
             # 2323978,  # Тюменская область
             # 2324078,  # Удмуртская республика
             # 2324064,  # Ульяновская область
@@ -93,21 +104,27 @@ class AllObjectSpider(scrapy.Spider):
                 url='https://api.tripadvisor.com/api/internal/1.19/meta_hac/{}'.format(location_id),
                 method='POST',
                 headers=HEADERS,
-                body='currency=RUB&lang=ru&limit=50&lod=extended', callback=self.parse_objects)
+                body='currency=RUB&lang=ru&limit=50&lod=extended',
+                callback=self.parse_objects,
+                meta={'location_id': location_id})
 
             HEADERS.update({'Content-Type': 'application/json'})
             yield scrapy.Request(
                 url='https://api.tripadvisor.com/api/internal/1.14/location/{}/restaurants?limit=50&offset=0&lang=ru'.format(location_id),
                 headers=HEADERS,
-                callback=self.parse_objects)
+                callback=self.parse_objects,
+                meta={'location_id': location_id})
 
             yield scrapy.Request(
                 url='https://api.tripadvisor.com/api/internal/1.14/location/{}/attractions?limit=50&offset=0&lang=ru'.format(location_id),
                 headers=HEADERS,
-                callback=self.parse_objects)
+                callback=self.parse_objects,
+                meta={'location_id': location_id})
 
     def parse_objects(self, response):
         result = json.loads(response.text)
+        location_id = response.meta.get('location_id')
+        print(location_id)
         objects = result['data']
 
         for obj in objects:
@@ -131,7 +148,8 @@ class AllObjectSpider(scrapy.Spider):
                     'Подкатегория': subcategory,
                     'Подтипы категории': subtypes,
                     'Дата': d_tuple[0],
-                    'Тип даты': d_tuple[1]
+                    'Тип даты': d_tuple[1],
+                    'location_id': location_id
                 }
 
         next_page = result['paging'].get('next')
@@ -143,12 +161,14 @@ class AllObjectSpider(scrapy.Spider):
                                       headers=response.request.headers,
                                       body=body,
                                       dont_filter=True,
-                                      callback=self.parse_objects)
+                                      callback=self.parse_objects,
+                                      meta={'location_id': location_id})
             else:
                 yield response.follow(url=next_page,
                                       headers=response.request.headers,
                                       dont_filter=True,
-                                      callback=self.parse_objects)
+                                      callback=self.parse_objects,
+                                      meta={'location_id': location_id})
 
 
 def replace_categories(category, subcategory, subtypes):
