@@ -7,10 +7,10 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = 'all_obj'
+BOT_NAME = 'tripadvisor'
 
-SPIDER_MODULES = ['all_obj.spiders']
-NEWSPIDER_MODULE = 'all_obj.spiders'
+SPIDER_MODULES = ['tripadvisor.spiders']
+NEWSPIDER_MODULE = 'tripadvisor.spiders'
 
 LOG_LEVEL = 'DEBUG'
 
@@ -63,9 +63,9 @@ TELNETCONSOLE_ENABLED = False
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-# ITEM_PIPELINES = {
-#    'all_obj.pipelines.AllObjPipeline': 300,
-# }
+ITEM_PIPELINES = {
+   'tripadvisor.pipelines.SaveLocationPipeline': 300,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html

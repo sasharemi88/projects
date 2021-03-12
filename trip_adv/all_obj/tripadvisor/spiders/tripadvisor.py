@@ -9,7 +9,7 @@ HEADERS = {'X-TripAdvisor-API-Key': 'ce957ab2-0385-40f2-a32d-ed80296ff67f',
            'X-TripAdvisor-UUID': '9bd844a6-231f-437b-b752-e5a1acbfee09'}
 
 
-class AllObjectSpider(scrapy.Spider):
+class TripSpider(scrapy.Spider):
     name = 'tripadvisor'
 
     def start_requests(self):
@@ -25,22 +25,22 @@ class AllObjectSpider(scrapy.Spider):
             # 2324029,  # Вологодская область
             2323967,  # Воронежская область
             # 2324042,  # Еврейская автономная область
-            2324020,  # Забайкальский край
-            2323944,  # Ивановская область
+            # 2324020,  # Забайкальский край
+            # 2323944,  # Ивановская область
             # 2323984,  # Иркутская область
             # 2324087,  # Кабардино-Балкарская Республика
-            2324022,  # Калининградская область
+            # 2324022,  # Калининградская область
             # 2323946,  # Калужская область
             # 2324090,  # Карачаево-Черкесская Республика
             # 2323989,  # Кемеровская область
             # 2324048,  # Кировская область
             # 2323947,  # Костромская область
-            2323938,  # Краснодарский край
+            # 2323938,  # Краснодарский край
             # 2324021,  # Красноярский край
             # 2323974,  # Курганская область
             # 2323948,  # Курская область
             # 2324023,  # Ленинградская область
-            2323950,  # Липецкая область
+            # 2323950,  # Липецкая область
             # 2324034,  # Магаданская область
             # 2323955,  # Московская область *
             # 298484,   # Москва *
@@ -57,13 +57,13 @@ class AllObjectSpider(scrapy.Spider):
             # 2324040,  # Приморский край
             # 2324027,  # Псковская область
             # 2323937,  # Республика Адыгея
-            1833666,  # Республика Алтай
+            # 1833666,  # Республика Алтай
             # 298517,   # Республика Башкортостан
             # 2324015,  # Республика Бурятия
             # 1536793,  # Республика Дагестан
             # 679470,   # Республика Ингушетия
             # 1207891,  # Республика Калмыкия
-            298504,  # Республика Карелия
+            # 298504,  # Республика Карелия
             # 2324091,  # Республика Коми
             # 313972,   # Крымнаш *
             # 2324066,  # Республика Марий Эл
@@ -80,12 +80,12 @@ class AllObjectSpider(scrapy.Spider):
             # 2324035,  # Сахалинская область
             # 2323977,  # Свердловская область
             # 295387,   # Севастополь
-            2323960,  # Смоленская область
+            # 2323960,  # Смоленская область
             # 2324094,  # Ставропольский край
             # 2323961,  # Тамбовская область
             # 2323963,  # Тверская область
             # 2324012,  # Томская область
-            2323964,  # Тульская область
+            # 2323964,  # Тульская область
             # 2323978,  # Тюменская область
             # 2324078,  # Удмуртская республика
             # 2324064,  # Ульяновская область
@@ -132,25 +132,43 @@ class AllObjectSpider(scrapy.Spider):
             subcategory = obj.get('subcategory')
             if subcategory:
                 subcategory = re.sub(r'\xa0', ' ', subcategory[0]['name'])
+            else:
+                subcategory = ''
             subtypes = obj.get('subtype')
             if subtypes:
-                subtypes = ','.join(x['name'] for x in subtypes)
+                subtypes = ','.join(
+                    re.sub(r'\xa0', ' ', x['name']) for x in subtypes
+                )
+            else:
+                subtypes = ''
 
             # category, subcategory = replace_categories(category, subcategory, subtypes)
 
-            for d_tuple in split_dates():
-                yield {
-                    'Широта': obj.get('latitude'),
-                    'Долгота': obj.get('longitude'),
-                    'Наименование': obj.get('name'),
-                    'Адрес': obj.get('address'),
-                    'Категория': category,
-                    'Подкатегория': subcategory,
-                    'Подтипы категории': subtypes,
-                    'Дата': d_tuple[0],
-                    'Тип даты': d_tuple[1],
-                    'location_id': location_id
-                }
+            # for d_tuple in split_dates():
+            #     yield {
+            #         'Широта': obj.get('latitude'),
+            #         'Долгота': obj.get('longitude'),
+            #         'Наименование': obj.get('name'),
+            #         'Адрес': obj.get('address'),
+            #         'Категория': category,
+            #         'Подкатегория': subcategory,
+            #         'Подтипы категории': subtypes,
+            #         'Дата': d_tuple[0],
+            #         'Тип даты': d_tuple[1],
+            #         'location_id': location_id
+            #     }
+
+            yield {
+                'object_id': obj.get('location_id'),
+                'location_id': location_id,
+                'name': obj.get('name'),
+                'category': category,
+                'subcategory': subcategory,
+                'subtype': subtypes,
+                'address': obj.get('address'),
+                'latitude': obj.get('latitude'),
+                'longitude': obj.get('longitude'),
+            }
 
         next_page = result['paging'].get('next')
         if next_page:
