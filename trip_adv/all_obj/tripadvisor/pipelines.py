@@ -14,8 +14,6 @@ class SaveLocationPipeline:
         self.session = Session()
 
     def process_item(self, item, spider):
-        if item['object_id'] == '677301':
-            print('ATTENTION')
         location = (
             self.session.query(LocationObject)
                 .filter_by(object_id=item['object_id'])

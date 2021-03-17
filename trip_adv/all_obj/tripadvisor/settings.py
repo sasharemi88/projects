@@ -12,7 +12,7 @@ BOT_NAME = 'tripadvisor'
 SPIDER_MODULES = ['tripadvisor.spiders']
 NEWSPIDER_MODULE = 'tripadvisor.spiders'
 
-LOG_LEVEL = 'DEBUG'
+LOG_LEVEL = 'INFO'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
