@@ -1,6 +1,6 @@
 from datetime import datetime
 import csv
-from datetime import datetime
+from datetime import date
 import re
 from typing import Tuple, List
 
@@ -29,6 +29,28 @@ def select_actual_records() -> List[LocationObject]:
     return query
 
 
+def select_current_year() -> List[LocationObject]:
+    """ Выборка записей за текущий год.
+
+    Returns
+    -------
+    query : list
+        Список экземпляров объекта LocationObject.
+
+    """
+    year = date.today().year
+    session = Session()
+    query = (
+        session.query(LocationObject)
+        .filter(LocationObject.date_create > datetime(year, 1, 1),
+                LocationObject.latitude.isnot(None),
+                LocationObject.address.isnot('')).all()
+    )
+    session.close()
+
+    return query
+
+
 def set_categories(category: str, subcategory: str, subtypes: str) -> Tuple[str, str]:
     """ Получение категории и подкатегории.
 
@@ -47,7 +69,7 @@ def set_categories(category: str, subcategory: str, subtypes: str) -> Tuple[str,
 
     """
     matching = {
-        # ('attraction', ''): ['Достопримечательности', 'Развлечения'],
+        ('attraction', ''): ['Достопримечательности', 'Развлечения'],
         ('attraction', 'Концерты и представления'): ['Отдых/развлечения/спорт', 'Развлечения'],
         ('attraction', 'Достопримечательности и культурные объекты'): ['Достопримечательности', 'Культурные объекты'],
         ('attraction', 'Природа и парки'): ['Достопримечательности', 'Парки'],
@@ -96,15 +118,26 @@ def prepare(field):
 
 def export_to_csv(file_path, query_records):
     file = open(file_path, 'w')
-    writer = csv.writer(file, delimiter='\t', quoting=csv.QUOTE_NONE,
-                        skipinitialspace=True, quotechar='"',
-                        doublequote=False, strict=True, escapechar='\\')
+    writer = csv.writer(file, delimiter=';', skipinitialspace=True, strict=True)
     writer.writerow(['Широта', 'Долгота', 'Наименование', 'Адрес', 'Категория',
                      'Подкатегория', 'Дата', 'Тип даты'])
     for record in query_records:
         record.category, record.subcategory = set_categories(
             record.category, record.subcategory, record.subtype_cat
         )
+        if get_first_day_of_quarter(datetime.now()) == record.date_update:
+            row = [
+                record.latitude,
+                record.longitude,
+                prepare(record.name),
+                prepare(record.address),
+                record.category,
+                record.subcategory,
+                record.date_update,
+                'q'
+            ]
+            writer.writerow(row)
+
         row = [
             record.latitude,
             record.longitude,
@@ -113,7 +146,7 @@ def export_to_csv(file_path, query_records):
             record.category,
             record.subcategory,
             record.date_update,
-            'q'
+            'y'
         ]
         writer.writerow(row)
 
@@ -121,6 +154,6 @@ def export_to_csv(file_path, query_records):
 
 
 if __name__ == '__main__':
-    records = select_actual_records()
+    records = select_current_year()
     export_to_csv(f'report_{datetime.today().strftime("%d_%m_%Y")}.csv', records)
     print()
