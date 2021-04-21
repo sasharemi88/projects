@@ -1,32 +1,12 @@
 from datetime import datetime
 import csv
 from datetime import date
+import json
 import re
 from typing import Tuple, List
 
 from tripadvisor.database import Session
 from tripadvisor.database.models import LocationObject, get_first_day_of_quarter
-
-
-def select_actual_records() -> List[LocationObject]:
-    """ Выборка записей за текущий квартал.
-
-    Returns
-    -------
-    query : list
-        Список экземпляров объекта LocationObject.
-
-    """
-    session = Session()
-    query = (
-        session.query(LocationObject)
-        .filter(LocationObject.date_update == get_first_day_of_quarter(datetime.now()),
-                LocationObject.latitude.isnot(None),
-                LocationObject.address.isnot('')).all()
-    )
-    session.close()
-
-    return query
 
 
 def select_current_year() -> List[LocationObject]:
@@ -44,6 +24,7 @@ def select_current_year() -> List[LocationObject]:
         session.query(LocationObject)
         .filter(LocationObject.date_create > datetime(year, 1, 1),
                 LocationObject.latitude.isnot(None),
+                # LocationObject.location_id == 2324025,
                 LocationObject.address.isnot('')).all()
     )
     session.close()
@@ -51,7 +32,7 @@ def select_current_year() -> List[LocationObject]:
     return query
 
 
-def set_categories(category: str, subcategory: str, subtypes: str) -> Tuple[str, str]:
+def set_category(category: str, subcategory: str, subtypes: str) -> Tuple[str, str]:
     """ Получение категории и подкатегории.
 
     Parameters
@@ -116,15 +97,37 @@ def prepare(field):
     return result
 
 
+def set_categories(records) -> List:
+
+    result = []
+
+    for record in records:
+        record.category, record.subcategory = set_category(
+            record.category, record.subcategory, record.subtype_cat
+        )
+        result.append(record)
+
+    return result
+
+
+def filter_records(records) -> List:
+
+    result = []
+
+    for record in records:
+        if (record.subcategory != 'Отели') and (record.category != 'Кафе/бары/рестораны'):
+            result.append(record)
+
+    return result
+
+
 def export_to_csv(file_path, query_records):
     file = open(file_path, 'w')
     writer = csv.writer(file, delimiter=';', skipinitialspace=True, strict=True)
     writer.writerow(['Широта', 'Долгота', 'Наименование', 'Адрес', 'Категория',
                      'Подкатегория', 'Дата', 'Тип даты'])
     for record in query_records:
-        record.category, record.subcategory = set_categories(
-            record.category, record.subcategory, record.subtype_cat
-        )
+
         if get_first_day_of_quarter(datetime.now()) == record.date_update:
             row = [
                 record.latitude,
@@ -153,7 +156,40 @@ def export_to_csv(file_path, query_records):
     file.close()
 
 
+def export_to_json(file_path, query_records):
+
+    json_data = {
+        'type': 'FeatureCollection',
+        'features': []
+    }
+
+    for record in query_records:
+
+        feature = {
+            'type': 'Feature',
+            'properties': {
+                'Название': record.name,
+                'Адрес': record.address,
+                'Категория': record.subcategory
+            },
+            'geometry': {
+                'type': 'Point',
+                'coordinates': [
+                    round(float(record.longitude), 5),
+                    round(float(record.latitude), 5)
+                ]
+            }
+        }
+
+        json_data['features'].append(feature)
+
+    json.dump(json_data, open(file_path, 'w'), ensure_ascii=False)
+
+
 if __name__ == '__main__':
     records = select_current_year()
-    export_to_csv(f'report_{datetime.today().strftime("%d_%m_%Y")}.csv', records)
+    records = set_categories(records)
+    # records = filter_records(records)
+    # export_to_csv(f'report_{datetime.today().strftime("%d_%m_%Y")}.csv', records)
+    export_to_json(f'report_{datetime.today().strftime("%d_%m_%Y")}.json', records)
     print()
